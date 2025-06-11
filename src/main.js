@@ -2,6 +2,7 @@ import { addEventListener, getEventState, getInitEventState } from './event-stat
 import { getInitState, calcCurrentState } from './state'
 import renderCanvas from './render-canvas'
 import { calcContourPoints } from './util'
+import flight from './flight.png'
 
 let mockNow = 0
 function getMockNow() {
@@ -45,37 +46,33 @@ function main(canvas, cfg) {
 
 // main(document.querySelector('#cvs'), { seed: 833235 })
 
-const canvas = document.querySelector('#cvs')
-canvas.width = canvas.clientWidth * 2
-canvas.height = canvas.clientHeight * 2
+const img = new Image()
+img.src = flight
+img.onload = () => {
+  const canvas = document.querySelector('#preview')
+  canvas.width = img.width / 3 + 10
+  canvas.height = img.height / 3 + 10
+  canvas.style.height = '300px'
+  canvas.style.width = (canvas.width * 300) / canvas.height + 'px'
+  const ctx = canvas.getContext('2d')
+  ctx.drawImage(img, 5, 5, canvas.width - 10, canvas.height - 10)
 
-const ctx = canvas.getContext('2d')
-ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-ctx.fillStyle = '#eee'
-ctx.fillRect(20, 20, canvas.width / 3, (canvas.height * 2) / 3)
-
-ctx.fillStyle = '#ccc'
-ctx.arc(canvas.width / 2, canvas.height / 2, canvas.width / 4, 0, Math.PI * 2)
-ctx.fill()
-
-ctx.fillStyle = '#aaa'
-ctx.beginPath()
-ctx.moveTo((canvas.width * 3) / 4, 100)
-ctx.lineTo(canvas.width / 2, (canvas.height * 3) / 4)
-ctx.lineTo(canvas.width - 20, canvas.height - 20)
-ctx.closePath() // 闭合路径
-ctx.fill() // 填充三角形
-
-const points = calcContourPoints(canvas, 8)
-ctx.clearRect(0, 0, canvas.width, canvas.height)
-points.forEach(point => {
-  ctx.beginPath()
-  ctx.moveTo(point.x, point.y)
-  ctx.arc(point.x, point.y, 1, 0, Math.PI * 2)
-  ctx.fill()
-})
-
-const cvs = document.querySelector('#preview').getContext('2d')
-const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-cvs.putImageData(imageData, 0, 0)
+  const points = calcContourPoints(canvas, 6)
+  console.log('points', points.flatMap(point => [point.x, point.y]))
+  const cvs = document.querySelector('#cvs')
+  cvs.style.width = canvas.clientWidth + 'px'
+  cvs.style.height = canvas.clientHeight + 'px'
+  cvs.width = canvas.width - 10
+  cvs.height = canvas.height - 10
+  const context = cvs.getContext('2d')
+  points.forEach((point, index) => {
+    context.beginPath()
+    context.arc(point.x - 5, point.y - 5, 1, 0, Math.PI * 2)
+    context.fill()
+    if (index > 0) {
+      context.beginPath()
+      context.moveTo(points[index - 1].x, points[index - 1].y)
+      context.lineTo(point.x, point.y)
+    }
+  })
+}
