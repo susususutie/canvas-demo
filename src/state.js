@@ -3,7 +3,15 @@ import { pseudoRandom, clamp, isRectColliding } from './util'
 export function getInitState(config) {
   return Object.freeze({
     dirty: true,
-    user: { x: Math.floor(config.width * 0.5), y: config.height - 50, w: 26, h: 40, s: 100 },
+    // originPoint:{x,y} 对象原点，点在画布上的位置就是对象位置。
+    // vertices: {x,y}[] 边界点，基于 originPoint定位
+    user: {
+      x: Math.floor(config.width * 0.5),
+      y: config.height - 50,
+      w: 26,
+      h: 40,
+      s: 100,
+    },
     lastFire: undefined,
     bullets: [], // {x,y,w,h,s,isHit}
     lastGenerateEnemy: undefined,
