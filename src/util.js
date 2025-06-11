@@ -146,7 +146,7 @@ function sampleOutline(points, precision) {
 /**
  * 计算图形的轮廓点
  */
-export function getOutlinePoints(canvas, precision) {
+export function calcContourPoints(canvas, precision) {
   // Step 1: 获取 Canvas 上的图像数据
   const ctx = canvas.getContext('2d')
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)

@@ -1,7 +1,7 @@
 import { addEventListener, getEventState, getInitEventState } from './event-state'
 import { getInitState, calcCurrentState } from './state'
 import renderCanvas from './render-canvas'
-import { getOutlinePoints } from './util'
+import { calcContourPoints } from './util'
 
 let mockNow = 0
 function getMockNow() {
@@ -46,24 +46,28 @@ function main(canvas, cfg) {
 // main(document.querySelector('#cvs'), { seed: 833235 })
 
 const canvas = document.querySelector('#cvs')
-const ctx = canvas.getContext('2d')
-ctx.fillStyle = '#ccc'
+canvas.width = canvas.clientWidth * 2
+canvas.height = canvas.clientHeight * 2
 
+const ctx = canvas.getContext('2d')
 ctx.clearRect(0, 0, canvas.width, canvas.height)
-ctx.arc(50, 50, 40, 0, Math.PI * 2)
+
+ctx.fillStyle = '#eee'
+ctx.fillRect(20, 20, canvas.width / 3, (canvas.height * 2) / 3)
+
+ctx.fillStyle = '#ccc'
+ctx.arc(canvas.width / 2, canvas.height / 2, canvas.width / 4, 0, Math.PI * 2)
 ctx.fill()
 
+ctx.fillStyle = '#aaa'
 ctx.beginPath()
-ctx.moveTo(50, 100)
-ctx.lineTo(10, 260)
-ctx.lineTo(90, 260)
+ctx.moveTo((canvas.width * 3) / 4, 100)
+ctx.lineTo(canvas.width / 2, (canvas.height * 3) / 4)
+ctx.lineTo(canvas.width - 20, canvas.height - 20)
 ctx.closePath() // 闭合路径
 ctx.fill() // 填充三角形
 
-ctx.fillRect(120, 40, 100, 150)
-ctx.fillRect(120, 120, 200, 150)
-
-const points = getOutlinePoints(canvas, 4)
+const points = calcContourPoints(canvas, 8)
 ctx.clearRect(0, 0, canvas.width, canvas.height)
 points.forEach(point => {
   ctx.beginPath()
@@ -71,3 +75,7 @@ points.forEach(point => {
   ctx.arc(point.x, point.y, 1, 0, Math.PI * 2)
   ctx.fill()
 })
+
+const cvs = document.querySelector('#preview').getContext('2d')
+const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+cvs.putImageData(imageData, 0, 0)
