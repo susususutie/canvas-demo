@@ -1,0 +1,16 @@
+{
+  "editor.rulers": [120],
+  "editor.guides.indentation": true,
+  "editor.tabSize": 2,
+  "editor.indentSize": "tabSize",
+  "editor.minimap.enabled": false,
+  "editor.minimap.autohide": true,
+  "editor.detectIndentation": false,
+  "editor.unicodeHighlight.nonBasicASCII": false,
+  "editor.unicodeHighlight.allowedLocales": {
+    "cs": true,
+    "zh-hant": true
+  },
+  "editor.accessibilitySupport": "off",
+  "editor.defaultFormatter": "esbenp.prettier-vscode"
+}
