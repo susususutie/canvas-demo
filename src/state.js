@@ -21,14 +21,22 @@ export function getInitState(config) {
 }
 
 export function calcCurrentState(prevState, timestamp, eventState, config) {
-  const newState = { ...prevState, dirty: false, user: { ...prevState.user }, lastTime: timestamp }
+  const newState = {
+    ...prevState,
+    dirty: false,
+    user: { ...prevState.user },
+    lastTime: timestamp,
+  }
   const deltaTime = timestamp - prevState.lastTime
   const flashId = pseudoRandom(config.seed, timestamp)
 
   // bullets
   {
     newState.bullets = prevState.bullets
-      .map(bullet => ({ ...bullet, y: bullet.y - (deltaTime * bullet.s) / 1000 }))
+      .map(bullet => ({
+        ...bullet,
+        y: bullet.y - (deltaTime * bullet.s) / 1000,
+      }))
       .filter(bullet => bullet.y + bullet.h > 0)
     if (eventState.fire && (!prevState.lastFire || timestamp - prevState.lastFire > 200)) {
       newState.lastFire = timestamp
@@ -104,8 +112,14 @@ export function calcCurrentState(prevState, timestamp, eventState, config) {
     }
 
     if (horizontalSpeed !== 0 && verticalSpeed !== 0) {
-      newState.user.x = clamp(newState.user.x + (deltaTime * newState.user.s * Math.cos(1) * horizontalSpeed) / 1000, config.width)
-      newState.user.y = clamp(newState.user.y + (deltaTime * newState.user.s * Math.cos(1) * verticalSpeed) / 1000, config.width)
+      newState.user.x = clamp(
+        newState.user.x + (deltaTime * newState.user.s * Math.cos(1) * horizontalSpeed) / 1000,
+        config.width
+      )
+      newState.user.y = clamp(
+        newState.user.y + (deltaTime * newState.user.s * Math.cos(1) * verticalSpeed) / 1000,
+        config.width
+      )
       newState.dirty = true
     } else if (!horizontalSpeed && !verticalSpeed) {
       // do nothing
@@ -113,7 +127,7 @@ export function calcCurrentState(prevState, timestamp, eventState, config) {
       newState.dirty = true
       newState.user.x = clamp(newState.user.x + (deltaTime * newState.user.s * horizontalSpeed) / 1000, config.width)
       console.log(newState.user.x)
-      newState.user.y = clamp(newState.user.y +(deltaTime * newState.user.s * verticalSpeed) / 1000, config.height)
+      newState.user.y = clamp(newState.user.y + (deltaTime * newState.user.s * verticalSpeed) / 1000, config.height)
     }
   }
 

@@ -98,28 +98,78 @@ export function intersectsAABBSphere(aabb, sphere) {
   return distance < sphere.radius
 }
 
+function sampleOutline(points, precision) {
+  const sampledPoints = []
+  const n = points.length
+
+  // Step 1: 计算每个点的局部密度
+  const densities = new Array(n).fill(0)
+  for (let i = 0; i < n; i++) {
+    let density = 0
+    for (let j = 0; j < n; j++) {
+      if (i !== j) {
+        const dx = points[i].x - points[j].x
+        const dy = points[i].y - points[j].y
+        const distance = Math.sqrt(dx * dx + dy * dy)
+        density += 1 / (distance + 1e-6) // 避免除零
+      }
+    }
+    densities[i] = density
+  }
+
+  // Step 2: 选择采样点
+  const selected = new Array(n).fill(false)
+  for (let i = 0; i < n; i++) {
+    if (!selected[i]) {
+      // 检查当前点与已选择的采样点的距离
+      let isSampled = true
+      for (let j = 0; j < sampledPoints.length; j++) {
+        const dx = points[i].x - sampledPoints[j].x
+        const dy = points[i].y - sampledPoints[j].y
+        const distance = Math.sqrt(dx * dx + dy * dy)
+        if (distance < precision) {
+          isSampled = false
+          break
+        }
+      }
+
+      if (isSampled) {
+        sampledPoints.push(points[i])
+        selected[i] = true
+      }
+    }
+  }
+
+  return sampledPoints
+}
+
 /**
  * 计算图形的轮廓点
  */
-function getOutlinePoints(canvas, precision) {
+export function getOutlinePoints(canvas, precision) {
   // Step 1: 获取 Canvas 上的图像数据
   const ctx = canvas.getContext('2d')
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
   const data = imageData.data
 
   // Step 2: 进行边缘检测
-  const threshold = 50 // 颜色差异阈值，可根据需要调整
-  const edges = new Uint8Array(canvas.width * canvas.height)
+  const threshold = 10 // 颜色差异阈值，可根据需要调整
+  const edges = new Uint8Array(Math.ceil((canvas.width * canvas.height) / 8)) // 总像素点个数/
+  console.log('edges', edges.length)
 
   for (let i = 0; i < data.length; i += 4) {
-    const x = (i / 4) % canvas.width
-    const y = Math.floor(i / 4 / canvas.width)
+    const pIndex = i / 4 // 第x个像素点
+    const x = pIndex % canvas.width
+    const y = Math.floor(pIndex / canvas.width)
+    if (x === 0 || y === 0 || x === canvas.width || y === canvas.height) continue
 
     // 当前像素的 RGBA 值
     const r = data[i]
     const g = data[i + 1]
     const b = data[i + 2]
     const a = data[i + 3]
+
+    if (a === 0) continue
 
     // 检查相邻像素，x为当前像素，o为相邻像素
     // o o o
@@ -152,36 +202,35 @@ function getOutlinePoints(canvas, precision) {
 
     // 如果是边缘点，标记为1
     if (isEdge) {
-      edges[y * canvas.width + x] = 1
+      // edges 每一项为 8位二进制数，可以存8个像素点的信息
+      const edgeIndex = Math.floor(pIndex / 8)
+      const groupValue = edges[edgeIndex].toString(2).padStart(8, '0').split('')
+      groupValue[pIndex % 8] = 1
+      edges[edgeIndex] = parseInt(groupValue.join(''), 2)
     }
   }
 
   // Step 3: 提取轮廓点坐标
   const points = []
-  for (let y = 0; y < canvas.height; y++) {
-    for (let x = 0; x < canvas.width; x++) {
-      if (edges[y * canvas.width + x] === 1) {
+  edges.forEach((value, index) => {
+    if (!value) {
+      return
+    }
+    const groupValue = value.toString(2).padStart(8, '0').split('')
+    groupValue.forEach((p, i) => {
+      if (+p) {
+        const pIndex = index * 8 + i
+        const x = pIndex % canvas.width
+        const y = Math.floor(pIndex / canvas.width)
         points.push({ x, y })
       }
-    }
-  }
+    })
+  })
+  console.log('points', points.length)
 
-  // Step 4: 基于距离的均匀采样
-  const sampledPoints = []
-  if (points.length > 0) {
-    let lastPoint = points[0]
-    sampledPoints.push(lastPoint)
-
-    for (let i = 1; i < points.length; i++) {
-      const currentPoint = points[i]
-      const distance = Math.sqrt((currentPoint.x - lastPoint.x) ** 2 + (currentPoint.y - lastPoint.y) ** 2)
-
-      if (distance >= precision) {
-        sampledPoints.push(currentPoint)
-        lastPoint = currentPoint
-      }
-    }
-  }
+  // Step 4: 基于局部密度的采样
+  const sampledPoints = sampleOutline(points, precision)
+  console.log('sampledPoints', sampledPoints.length)
 
   return sampledPoints
 }
